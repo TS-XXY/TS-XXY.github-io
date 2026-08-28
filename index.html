@@ -3,24 +3,327 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
   <title>群聊自用CAGO排行榜</title>
   <style>
     body {
       margin: 0;
       min-height: 100vh;
-      background-color: #cce7ff; /* 淡蓝色背景 */
+      background: linear-gradient(135deg, #0a0a1a 0%, #1a1a3a 40%, #0f1a2e 70%, #050510 100%);
       font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+    }
+    /* 框外部上方空白处的 CAGO 文字 */
+    .cago-label {
+      position: fixed;
+      top: 45px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      color: #ffffff;
+      font-size: 2.2rem;
+      font-weight: bold;
+      letter-spacing: 4px;
+    }
+    /* 排序切换按钮 */
+    .sort-bar {
+      position: fixed;
+      top: 100px;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+      z-index: 20;
+    }
+    .sort-btn {
+      padding: 6px 20px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 20px;
+      color: #ffffff;
+      font-family: "ZCOOL XiaoWei", "Microsoft YaHei", sans-serif;
+      font-size: 1rem;
+      cursor: pointer;
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+    .sort-btn:hover { background: rgba(255, 255, 255, 0.18); }
+    .sort-btn.active {
+      background: rgba(255, 255, 255, 0.95);
+      color: #0a0a1a;
+      border-color: #ffffff;
+    }
+    /* 中央的框 */
+    .box {
+      position: fixed;
+      top: 150px;
+      bottom: 150px;
+      left: 100px;
+      right: 100px;
+      background-color: rgba(204, 231, 255, 0.5);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 2px solid #ffffff;
+      border-radius: 16px;
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+    /* 格子容器（纵向堆叠） */
+    .grids {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding-top: 15px;
+      gap: 10px;
+      overflow: hidden;
+    }
+    /* 框内格子 */
+    .grid {
+      width: calc(100% - 50px);
+      height: calc((100vh - 300px) / 6 + 20px);  /* 高度 = 框高 1/6 + 20px */
+      background: linear-gradient(135deg, rgba(0,0,0,0.82) 0%, rgba(20,28,60,0.82) 50%, rgba(0,0,0,0.85) 100%);
+      border: 2px solid #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+      box-sizing: border-box;
+      flex-shrink: 0;
+      overflow: hidden;
       display: flex;
       align-items: center;
-      justify-content: center;
+      gap: 18px;
+      padding: 0 20px;
     }
-    h1 {
-      color: #1a4d80;
-      font-size: 2.5rem;
+    /* 名次序号 */
+    .grid .rank {
+      color: #ffffff;
+      font-size: 2rem;
+      font-weight: bold;
+      width: 36px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+    /* 头像+名字 子容器（作为整体在格子内垂直居中） */
+    .grid .player-info {
+      height: 70%;                          /* 与原头像同高，居中后顶部在 15% 处 */
+      display: flex;
+      align-items: flex-start;              /* 名字顶部对齐头像顶部 */
+      gap: 18px;
+      flex-shrink: 0;
+    }
+    /* 格子内头像 */
+    .grid .avatar {
+      height: 100%;                         /* 填满 player-info = 格子高 70% */
+      width: auto;
+      object-fit: contain;
+      flex-shrink: 0;
+    }
+    /* 玩家名 */
+    .grid .player-name {
+      color: #ffffff;
+      font-family: "ZCOOL XiaoWei", "Microsoft YaHei", "PingFang SC", sans-serif;
+      font-size: 2.1rem;
+      letter-spacing: 1px;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+    /* 数据统计区 */
+    .grid .stats {
+      flex: 1;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-evenly;     /* 正方形格子均匀分布 */
+      gap: 4px;
+      min-width: 0;
+    }
+    .grid .stat {
+      height: 70%;                       /* 以格子高度为基准 */
+      aspect-ratio: 1 / 1;              /* 正方形 */
+      flex: 0 0 auto;                    /* 不拉伸，保持正方形 */
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;       /* 内容顶部对齐，与名字同高 */
+      gap: 2px;
+      padding-top: 2px;
+      background: rgba(255, 255, 255, 0.12);          /* 毛玻璃半透明白 */
+      border: 1px solid rgba(255, 255, 255, 0.22);    /* 玻璃边缘高光 */
+      border-radius: 8px;
+      backdrop-filter: blur(24px) saturate(1.5);     /* 加强毛玻璃模糊 */
+      -webkit-backdrop-filter: blur(24px) saturate(1.5);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.25), 0 2px 8px rgba(0,0,0,0.25);
+      box-sizing: border-box;
+    }
+    .grid .stat-label {
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 0.85rem;
+      letter-spacing: 0;
+      white-space: nowrap;
+      line-height: 1;
+    }
+    .grid .stat-value {
+      color: #ffffff;
+      font-family: "ZCOOL XiaoWei", "Microsoft YaHei", sans-serif;
+      font-size: 1.7rem;                /* 放大数值 */
+      font-weight: bold;
+      line-height: 1;
+      white-space: nowrap;
+    }
+    /* 右下角三角形导航 */
+    .nav-triangles {
+      position: absolute;
+      bottom: 22px;
+      right: 34px;
+      display: flex;
+      gap: 26px;
+      z-index: 10;
+    }
+    .triangle {
+      width: 0;
+      height: 0;
+      cursor: pointer;
+      transition: filter 0.15s ease;
+    }
+    .triangle:hover { filter: brightness(0.7); }
+    /* 朝左三角形 */
+    .triangle.left {
+      border-top: 12px solid transparent;
+      border-bottom: 12px solid transparent;
+      border-right: 20px solid #ffffff;
+    }
+    /* 朝右三角形 */
+    .triangle.right {
+      border-top: 12px solid transparent;
+      border-bottom: 12px solid transparent;
+      border-left: 20px solid #ffffff;
+    }
+    .triangle.disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
     }
   </style>
 </head>
 <body>
-  <h1>群聊自用CAGO排行榜</h1>
+  <div class="cago-label">CAGO</div>
+  <div class="sort-bar">
+    <div class="sort-btn active" data-sort="kd">KD 综合排行</div>
+    <div class="sort-btn" data-sort="win">按胜率</div>
+    <div class="sort-btn" data-sort="kills">按总杀敌</div>
+  </div>
+  <div class="box">
+    <div class="grids" id="grids"></div>
+    <div class="nav-triangles">
+      <div class="triangle left" id="prev" title="上一页"></div>
+      <div class="triangle right" id="next" title="下一页"></div>
+    </div>
+  </div>
+
+  <script>
+    // 玩家数据（后续在此增删即可）
+    const players = [
+      { name: "Dawn",        kills: 59, assists: 6,  deaths: 22, wins: 1, losses: 0, games: 2 },
+      { name: "mbeizl",      kills: 86, assists: 13, deaths: 47, wins: 6, losses: 2, games: 5 },
+      { name: "Expand15",    kills: 27, assists: 5,  deaths: 21, wins: 0, losses: 1, games: 2 },
+      { name: "iQ00IQhigh",  kills: 78, assists: 22, deaths: 65, wins: 6, losses: 3, games: 5 },
+      { name: "Mis1PL2002",  kills: 94, assists: 24, deaths: 83, wins: 5, losses: 4, games: 6 },
+      { name: "若至 Peter",  kills: 81, assists: 24, deaths: 78, wins: 5, losses: 5, games: 6 },
+      { name: "繁星 chip",    kills: 38, assists: 11, deaths: 87, wins: 2, losses: 8, games: 6 },
+      { name: "D1CKING",     kills: 27, assists: 7,  deaths: 81, wins: 2, losses: 8, games: 6 },
+    ];
+
+    const PAGE_SIZE = 3;             // 一次展示 3 名玩家
+    let currentPage = 0;
+    let currentSort = "kd";          // 当前排序：kd / win / kills
+    const totalPages = Math.max(1, Math.ceil(players.length / PAGE_SIZE));
+
+    // 按当前排序返回玩家列表
+    function sortedPlayers() {
+      const arr = players.slice();
+      const winRateOf = p => {
+        const d = (p.wins || 0) + (p.losses || 0);
+        return d ? p.wins / d : 0;
+      };
+      const kdOf = p => p.deaths ? p.kills / p.deaths : p.kills;
+      if (currentSort === "win") {
+        arr.sort((a, b) => winRateOf(b) - winRateOf(a));
+      } else if (currentSort === "kills") {
+        arr.sort((a, b) => (b.kills || 0) - (a.kills || 0));
+      } else {
+        arr.sort((a, b) => kdOf(b) - kdOf(a));
+      }
+      return arr;
+    }
+
+    function render() {
+      const list = sortedPlayers();
+      const start = currentPage * PAGE_SIZE;
+      const slice = list.slice(start, start + PAGE_SIZE);
+      const html = slice.map((p, i) => {
+        const rank = start + i + 1;
+        const games = p.games ?? 0;                          // 参与局数（含平局，给定值）
+        const decisive = (p.wins || 0) + (p.losses || 0);    // 胜+败（不计平局）
+        const winRate = decisive ? (p.wins / decisive * 100).toFixed(2) : "0.00";
+        const kd = p.deaths ? (p.kills / p.deaths).toFixed(2) : "0.00";
+        const stats = [
+          { label: "杀敌",   value: p.kills ?? 0 },
+          { label: "助攻",   value: p.assists ?? 0 },
+          { label: "死亡",   value: p.deaths ?? 0 },
+          { label: "胜场",   value: p.wins ?? 0 },
+          { label: "败场",   value: p.losses ?? 0 },
+          { label: "参与局数", value: games },
+          { label: "胜率",   value: winRate + "%" },
+          { label: "K/D",    value: kd },
+        ];
+        const statsHtml = stats.map(s =>
+          `<div class="stat"><span class="stat-label">${s.label}</span><span class="stat-value">${s.value}</span></div>`
+        ).join("");
+        return `
+          <div class="grid">
+            <span class="rank">${rank}</span>
+            <div class="player-info">
+              <img class="avatar" src="png/123.png" alt="头像">
+              <span class="player-name">${p.name}</span>
+            </div>
+            <div class="stats">${statsHtml}</div>
+          </div>`;
+      }).join("");
+      document.getElementById("grids").innerHTML = html;
+
+      // 更新三角形可用状态
+      document.getElementById("prev").classList.toggle("disabled", currentPage === 0);
+      document.getElementById("next").classList.toggle("disabled", currentPage === totalPages - 1);
+    }
+
+    document.getElementById("prev").addEventListener("click", (e) => {
+      if (currentPage === 0) return;
+      currentPage--;
+      render();
+    });
+    document.getElementById("next").addEventListener("click", (e) => {
+      if (currentPage === totalPages - 1) return;
+      currentPage++;
+      render();
+    });
+
+    // 排序切换
+    document.querySelectorAll(".sort-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        currentSort = btn.dataset.sort;
+        currentPage = 0;                 // 切换排序后回到第 1 页
+        document.querySelectorAll(".sort-btn").forEach(b =>
+          b.classList.toggle("active", b === btn)
+        );
+        render();
+      });
+    });
+
+    render();
+  </script>
 </body>
 </html>
