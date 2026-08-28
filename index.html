@@ -207,6 +207,86 @@
       opacity: 0.3;
       cursor: not-allowed;
     }
+
+    /* ===== 竖屏适配 ===== */
+    @media (orientation: portrait) {
+      .cago-label {
+        top: 28px;
+        font-size: 1.7rem;
+        letter-spacing: 3px;
+      }
+
+      .sort-bar {
+        top: 68px;
+        gap: 8px;
+        flex-wrap: wrap;
+        padding: 0 12px;
+      }
+      .sort-btn {
+        padding: 5px 14px;
+        font-size: 0.85rem;
+      }
+
+      .box {
+        top: 110px;
+        bottom: 72px;
+        left: 12px;
+        right: 12px;
+      }
+
+      .grids {
+        padding-top: 10px;
+        gap: 8px;
+        overflow-y: auto;
+        scrollbar-width: thin;
+      }
+
+      /* 格子改为自动高度，内部换行：第一行名次+头像+名字，第二行起统计数据 */
+      .grid {
+        width: calc(100% - 20px);
+        height: auto;
+        flex-wrap: wrap;
+        align-content: flex-start;
+        gap: 10px 12px;
+        padding: 12px 14px;
+      }
+
+      .grid .rank {
+        font-size: 1.5rem;
+        width: 26px;
+      }
+
+      .grid .player-info {
+        height: auto;
+        flex: 1;
+        min-width: 0;
+        align-items: center;
+        gap: 12px;
+      }
+      .grid .avatar { height: 44px; }
+      .grid .player-name { font-size: 1.35rem; }
+
+      .grid .stats {
+        flex: 1 1 100%;
+        height: auto;
+        flex-wrap: wrap;
+        justify-content: flex-start;
+        gap: 8px;
+      }
+      /* 数据格改为每行 4 个的紧凑卡片 */
+      .grid .stat {
+        height: auto;
+        aspect-ratio: auto;
+        flex: 0 0 auto;
+        width: calc((100% - 24px) / 4);
+        padding: 6px 4px 5px;
+        gap: 2px;
+      }
+      .grid .stat-label { font-size: 0.68rem; }
+      .grid .stat-value { font-size: 1.05rem; }
+
+      .nav-triangles { bottom: 14px; right: 20px; gap: 20px; }
+    }
   </style>
 </head>
 <body>
@@ -227,14 +307,14 @@
   <script>
     // 玩家数据（后续在此增删即可）
     const players = [
-      { name: "西喵喵喵喵喵",        kills: 59, assists: 6,  deaths: 22, wins: 1, losses: 0, games: 2 },
+      { name: "Dawn",        kills: 59, assists: 6,  deaths: 22, wins: 1, losses: 0, games: 2 },
       { name: "mbeizl",      kills: 86, assists: 13, deaths: 47, wins: 6, losses: 2, games: 5 },
-      { name: "小宇宙",    kills: 27, assists: 5,  deaths: 21, wins: 0, losses: 1, games: 2 },
-      { name: "IQOO",  kills: 78, assists: 22, deaths: 65, wins: 6, losses: 3, games: 5 },
-      { name: "M1slPL",  kills: 94, assists: 24, deaths: 83, wins: 5, losses: 4, games: 6 },
-      { name: "若至Peter",  kills: 81, assists: 24, deaths: 78, wins: 5, losses: 5, games: 6 },
-      { name: "繁星chip",    kills: 38, assists: 11, deaths: 87, wins: 2, losses: 8, games: 6 },
-      { name: "苹果",     kills: 27, assists: 7,  deaths: 81, wins: 2, losses: 8, games: 6 },
+      { name: "Expand15",    kills: 27, assists: 5,  deaths: 21, wins: 0, losses: 1, games: 2 },
+      { name: "iQ00IQhigh",  kills: 78, assists: 22, deaths: 65, wins: 6, losses: 3, games: 5 },
+      { name: "Mis1PL2002",  kills: 94, assists: 24, deaths: 83, wins: 5, losses: 4, games: 6 },
+      { name: "若至 Peter",  kills: 81, assists: 24, deaths: 78, wins: 5, losses: 5, games: 6 },
+      { name: "繁星 chip",    kills: 38, assists: 11, deaths: 87, wins: 2, losses: 8, games: 6 },
+      { name: "D1CKING",     kills: 27, assists: 7,  deaths: 81, wins: 2, losses: 8, games: 6 },
     ];
 
     const PAGE_SIZE = 3;             // 一次展示 3 名玩家
